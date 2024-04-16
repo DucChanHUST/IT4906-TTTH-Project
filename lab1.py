@@ -2,11 +2,16 @@ import numpy as np
 import random
 
 inf = 1000000000
+N = 100
+gen = 50
+p_mutation = 0.2
+neighborSize = 5
 
 def initCoordinate(N):
-  x = []
-  for i in range(N):
-    x.append(random.randint(1, 1000))
+  x = set()
+  while x.__len__() < N:
+    x.add(random.randint(0, 1000))
+  x = list(x)
   x.sort()
   return x
 
@@ -85,42 +90,67 @@ def coverShrink(N, individual, x):
   # Ex: c_r = [0, 100, 0, 0, 59, 74, 0,]; r = [100, 59, 74]
 
 
-  # shrink - TODO: NEED A HELP
-  '''
+  # shrink
   shrink_iterations = 0
-  while shrink_iterations < 1:
-    changed = False 
+  while shrink_iterations < 3:
     for i in range(1, k-1):
-      if (x[index[i]] - r[i] < x[index[i-1]] + r[i-1]) and (x[index[i]] + r[i] > x[index[i+1]] - r[i+1]):
-        c_r[index[i]] = max(0, min(x[index[i]] - x[index[i-1]] - r[i-1], x[index[i+1]] - x[index[i]] - r[i+1]))
-        changed = True
+      curr_left = x[index[i]] - r[i]
+      curr_right = x[index[i]] + r[i]
+      prev_left = x[index[i-1]] - r[i-1]
+      prev_right = x[index[i-1]] + r[i-1]
+      next_left =x[index[i+1]] - r[i+1]
+      next_right = x[index[i+1]] + r[i+1]
+
+      if (prev_right >= curr_right):
+        r[i] = 0
+        c_r[index[i]] = 0
+        individual[index[i]] = 0
+
+      if (next_left <= curr_left):
+        r[i] = 0
+        c_r[index[i]] = 0
+        individual[index[i]] = 0
+      
+      if (curr_left <= prev_left):
+        r[i-1] = 0
+        c_r[index[i-1]] = 0
+        individual[index[i-1]] = 0
+
+      if (curr_right >= next_right):
+        r[i+1] = 0
+        c_r[index[i+1]] = 0
+        individual[index[i+1]] = 0
+
+      if (curr_left < prev_right) and (curr_right > next_left):
+        c_r[index[i]] = max(0, max(x[index[i]] - x[index[i-1]] - r[i-1], x[index[i+1]] - x[index[i]] - r[i+1]))
         if c_r[index[i]] == 0:
+          r[i] = 0
           individual[index[i]] = 0
-          k -= 1
-    if not changed:
-        break
+        else:
+          r[i] = c_r[index[i]]
     shrink_iterations += 1 
-  '''
-  
+
+  k = sum(individual[i] == 1 for i in range(N))
+
   return c_r, k
 
 def crossover(parent1, parent2):
-  index = random.randint(1, parent1.__len__()-1)
+  index = random.randint(1, N-1)
   child = parent1[:index] + parent2[index:]
   while is_all_zero(child):
-    index = random.randint(1, parent1.__len__()-1)
+    index = random.randint(1, N-1)
     child = parent1[:index] + parent2[index:]
   return child
 
 def mutation(individual):
   newIndividual = individual
   while True:
-    index = random.randint(0, individual.__len__()-1)
+    index = random.randint(0, N-1)
     if newIndividual[index] == 1:
       newIndividual[index] = 0
       break
   while True:
-    index = random.randint(0, individual.__len__()-1)
+    index = random.randint(0, N-1)
     if newIndividual[index] == 0:
       newIndividual[index] = 1
       break
@@ -163,11 +193,9 @@ def updateZ(f1, f2, f3, z, zNad):
     zNad[2] = f3
   return z, zNad
 
-def main(p_mutation = 0.2, gen = 50, N = 50, neighborSize = 5):
-  # X = initCoordinate(N)
-  X = [57, 57, 61, 85, 112, 115, 125, 125, 132, 155, 202, 228, 242, 282, 287, 310, 326, 384, 392, 435, 453, 513, 518, 520, 570, 570, 571, 629, 645, 647, 664, 669, 677, 693, 711, 714, 716, 740, 748, 751, 755, 759, 782, 828, 847, 851, 
-865, 947, 951, 956]
-  print("X: ", X)
+def main():
+  X = initCoordinate(N)
+  print("X =", X)
   lamb = initLambda()
   # lamb = [[0.1, 0.1, 0.8], [0.1, 0.2, 0.7], [0.1, 0.3, 0.6], ...]
   popSize = lamb.__len__()
@@ -194,7 +222,6 @@ def main(p_mutation = 0.2, gen = 50, N = 50, neighborSize = 5):
     z, zNad = updateZ(f1[i], f2[i], f3[i], z, zNad)
   # 
   for i in range(gen):
-    print("Generation: ", i)
     for j in range(popSize):
       minFit = calFitness(f1[j], f2[j], f3[j], z, zNad, lamb[j])
       
@@ -256,7 +283,6 @@ def main(p_mutation = 0.2, gen = 50, N = 50, neighborSize = 5):
           population[j] = backward
           z, zNad = updateZ(f1[j], f2[j], f3[j], z, zNad)
           f1[j], f2[j], f3[j], r[j] = f1j, f2j, f3j, r_j
-      
 
   print("Result: ")
   for i in range(popSize):
