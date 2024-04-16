@@ -299,7 +299,7 @@ def main():
 
     print("Result: ")
     for i in range(popSize):
-        # print(i, r[i])
+        print(i, r[i])
         print("Fitness: ", calFitness(f1[i], f2[i], f3[i], z, zNad, lamb[i]))
         print(f1[i], f2[i], f3[i])
         print("\n")
