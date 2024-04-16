@@ -1,0 +1,1 @@
+delete result.txt before run lab1.py
