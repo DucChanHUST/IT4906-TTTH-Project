@@ -2,13 +2,16 @@ import numpy as np
 import random
 
 inf = 1000000000
+RHO = 1
+KAPPA = 2
 N = 100
 gen = 10
 p_mutation = 0.2
 neighborSize = 5
-
-fileData = "./dataset/100_1.txt"
-X = np.loadtxt(fileData, dtype=int)
+barrierLength = 1000
+outputFile = "result_MOEAD.txt"
+inputFile = "./dataset/100_1.txt"
+X = np.loadtxt(inputFile, dtype=int)
 
 
 def initLambda():
@@ -49,7 +52,7 @@ def searchNeighbor(lamb, neighborSize):
     return B
 
 
-def initIndividual(N):
+def initIndividual():
     individual = []
     for i in range(N):
         individual.append(random.randint(0, 1))
@@ -63,10 +66,10 @@ def is_all_zero(array):
     return True
 
 
-def initValidIndividual(N):
-    individual = initIndividual(N)
+def initValidIndividual():
+    individual = initIndividual()
     while is_all_zero(individual):
-        individual = initIndividual(N)
+        individual = initIndividual()
     return individual
 
 
@@ -75,7 +78,7 @@ def coverShrink(individual):
     k = len(index)
 
     half_dis = [X[index[0]], *[(X[index[i+1]] - X[index[i]]) /
-                               2 for i in range(k-1)], 1000 - X[index[-1]]]
+                               2 for i in range(k-1)], barrierLength - X[index[-1]]]
 
     r = [max(half_dis[0], half_dis[1]), max(half_dis[k-1], half_dis[k])]
     for i in range(1, k-1):
@@ -170,7 +173,7 @@ def evaluate(individual):
     # r = [r/1000 for r in r]
     for i in range(N):
         if individual[i] == 1:
-            f1 += r[i] ** 2
+            f1 += RHO * (r[i] ** KAPPA)
         if r[i] > f3:
             f3 = r[i]
 
@@ -209,7 +212,7 @@ def main():
     # popSize = 36
     population = []
     for i in range(popSize):
-        population.append(initValidIndividual(N))
+        population.append(initValidIndividual())
 
     # for i in range(popSize):
     #   print(evaluate(population[i]))
@@ -228,6 +231,9 @@ def main():
         f1[i], f2[i], f3[i], r[i] = evaluate(population[i])
         z, zNad = updateZ(f1[i], f2[i], f3[i], z, zNad)
     #
+    with open(outputFile, "w") as file:
+        file.write(
+            "Gen:        Individual:       Power:        Sensors:      Fairness:       Fitness\n")
     for i in range(gen):
         for j in range(popSize):
             minFit = calFitness(f1[j], f2[j], f3[j], z, zNad, lamb[j])
@@ -293,15 +299,20 @@ def main():
                     f1[j], f2[j], f3[j], r[j] = f1j, f2j, f3j, r_j
 
             # write file
-            with open("result.txt", "a") as file:
-                file.write(
-                    f"Gen {i+1}, Individual {j+1}: {f1[j]/1000} {f2[j]} {f3[j]}\n")
+            with open(outputFile, "a") as file:
+                output_string = f"{{:<{13}}} {{:<{15}}} {{:<{
+                    15}}} {{:<{13}}} {{:<{13}}} {{:<{5}}}\n"
+                file.write(output_string.format(i + 1, j+1, f1[j]/1000, f2[j], f3[j], round(
+                    calFitness(f1[j], f2[j], f3[j], z, zNad, lamb[j]), 2)))
+
+                # file.write(
+                #     f"Gen {i+1}, Individual {j+1}: {f1[j]/1000} {f2[j]} {f3[j]}, Fitness: {round(calFitness(f1[j], f2[j], f3[j], z, zNad, lamb[j]), 2)}\n")
 
     print("Result: ")
     for i in range(popSize):
         print(i, r[i])
-        print("Fitness: ", calFitness(f1[i], f2[i], f3[i], z, zNad, lamb[i]))
-        print(f1[i], f2[i], f3[i])
+    #     print("Fitness: ", calFitness(f1[i], f2[i], f3[i], z, zNad, lamb[i]))
+    #     print(f1[i], f2[i], f3[i])
         print("\n")
 
     print("Z: ", z, zNad)

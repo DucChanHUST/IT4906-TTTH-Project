@@ -8,12 +8,12 @@ import numpy as np
 def read_data_from_txt(filename):
     data = {}
     with open(filename, 'r') as file:
+        next(file)
         for line in file:
-            line = line.strip()
+            parts = line.split()
             if line:
-                parts = line.split(': ')
-                ind = int(parts[0].split(', ')[1].split(' ')[1])
-                values = list(map(float, parts[1].split(' ')))
+                ind = int(parts[1])
+                values = list(map(float, parts[2:5]))
                 if ind not in data:
                     data[ind] = []
                 data[ind].append(values)
@@ -21,7 +21,7 @@ def read_data_from_txt(filename):
 
 
 # Đọc dữ liệu từ tệp tin
-filename = 'result.txt'
+filename = 'result_MOEAD.txt'
 data = read_data_from_txt(filename)
 
 # Biểu diễn dữ liệu dưới dạng 3D
