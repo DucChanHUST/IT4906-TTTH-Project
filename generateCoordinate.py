@@ -1,6 +1,6 @@
 import random
 
-N = 100
+N = 200
 
 
 def is_all_zero(array):
@@ -27,7 +27,7 @@ def save_array_to_txt(array, filename):
 
 array = initCoordinate(N)
 
-filename = "./dataset/100_1.txt"
+filename = "./dataset/200_1.txt"
 save_array_to_txt(array, filename)
 
 print("Mảng đã được lưu vào tệp tin:", filename)

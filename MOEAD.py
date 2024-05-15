@@ -4,13 +4,13 @@ import random
 inf = 1000000000
 RHO = 1
 KAPPA = 2
-N = 100
-gen = 10
+N = 150
+gen = 100
 p_mutation = 0.2
 neighborSize = 5
 barrierLength = 1000
-outputFile = "result_MOEAD.txt"
-inputFile = "./dataset/100_1.txt"
+outputFile = "result_MOEAD.csv"
+inputFile = "./dataset/150_1.txt"
 X = np.loadtxt(inputFile, dtype=int)
 
 
@@ -149,6 +149,21 @@ def crossover(parent1, parent2):
     return child
 
 
+def crossover2(parent1, parent2):
+    index1 = random.randint(1, N-1)
+    index2 = random.randint(1, N-1)
+    if index1 > index2:
+        index1, index2 = index2, index1
+    child = parent1[:index1] + parent2[index1:index2] + parent1[index2:]
+    while is_all_zero(child):
+        index1 = random.randint(1, N-1)
+        index2 = random.randint(1, N-1)
+        if index1 > index2:
+            index1, index2 = index2, index1
+        child = parent1[:index1] + parent2[index1:index2] + parent1[index2:]
+    return child
+
+
 def mutation(individual):
     newIndividual = individual
     while True:
@@ -241,7 +256,7 @@ def main():
             # select 1 neighbor to crossover
             neighborIndex = random.randint(1, neighborSize-1)
             # crossover
-            child = crossover(
+            child = crossover2(
                 population[j], population[neighbor[j][neighborIndex]])
             f1j, f2j, f3j, r_j = evaluate(child)
             childFit = calFitness(f1j, f2j, f3j, z, zNad, lamb[j])
