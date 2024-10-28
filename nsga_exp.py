@@ -6,15 +6,15 @@ import numpy as np
 # from pycallgraph2 import PyCallGraph
 # from pycallgraph2.output import GraphvizOutput
 
-input_file = "./dataset/100_1.txt"
-output_file = "./result/nsga.csv"
+dataset = "100_1"
+input_file = f"./dataset/{dataset}.txt"
 
 x_corr = np.loadtxt(input_file, dtype=int)
 num_sensor = len(x_corr)
 
 inf = 99999
-pop_size = 32
-max_gen = 10000
+pop_size = 8
+max_gen = 10
 p_mutation = 0.3
 k = 2
 k_minus_1 = k - 1
@@ -265,49 +265,52 @@ def calc_crowding_distance(population):
 
 
 def main():
-    archive_f = []
-    population = init_population(pop_size)
+    for run in range(10):
+        output_file = f"./result/nsga_{dataset}_{run}.csv"
 
-    for generation in range(max_gen):
-        np.random.shuffle(population)
+        archive_f = []
+        population = init_population(pop_size)
 
-        for i in range(0, pop_size, 2):
-            child1, child2 = Individual(), Individual()
+        for generation in range(max_gen):
+            np.random.shuffle(population)
 
-            child1.gene, child2.gene = crossover(
-                population[i].gene, population[i + 1].gene
+            for i in range(0, pop_size, 2):
+                child1, child2 = Individual(), Individual()
+
+                child1.gene, child2.gene = crossover(
+                    population[i].gene, population[i + 1].gene
+                )
+                child1.f1, child1.f2 = evaluate(child1.gene)
+                child2.f1, child2.f2 = evaluate(child2.gene)
+
+                population.extend([child1, child2])
+
+            ranks = non_dominated_rank(population)
+            for i in range(len(population)):
+                population[i].rank = ranks[i]
+
+            rank = 0
+            next_population = []
+
+            while len(next_population) < pop_size:
+                current_front = [ind for ind in population if ind.rank == rank]
+                if len(current_front) + len(next_population) > pop_size:
+                    current_front = calc_crowding_distance(current_front)
+                next_population.extend(current_front[: pop_size - len(next_population)])
+                rank += 1
+
+            population = next_population
+            archive_f.extend([[ind.f1, ind.f2] for ind in population])
+
+            # for ind in population:
+            # print("r= ", ind.r)
+
+        with open(output_file, "w") as file:
+            file.write(
+                f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
             )
-            child1.f1, child1.f2 = evaluate(child1.gene)
-            child2.f1, child2.f2 = evaluate(child2.gene)
-
-            population.extend([child1, child2])
-
-        ranks = non_dominated_rank(population)
-        for i in range(len(population)):
-            population[i].rank = ranks[i]
-
-        rank = 0
-        next_population = []
-
-        while len(next_population) < pop_size:
-            current_front = [ind for ind in population if ind.rank == rank]
-            if len(current_front) + len(next_population) > pop_size:
-                current_front = calc_crowding_distance(current_front)
-            next_population.extend(current_front[: pop_size - len(next_population)])
-            rank += 1
-
-        population = next_population
-        archive_f.extend([[ind.f1, ind.f2] for ind in population])
-
-        # for ind in population:
-        # print("r= ", ind.r)
-
-    with open(output_file, "w") as file:
-        file.write(
-            f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
-        )
-        for item in archive_f:
-            file.write(f"{item[0]} {item[1]}\n")
+            for item in archive_f:
+                file.write(f"{item[0]} {item[1]}\n")
 
 
 if __name__ == "__main__":
