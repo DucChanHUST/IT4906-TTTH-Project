@@ -13,8 +13,8 @@ x_corr = np.loadtxt(input_file, dtype=int)
 num_sensor = len(x_corr)
 
 inf = 99999
-pop_size = 8
-max_gen = 10
+pop_size = 32
+max_gen = 10000
 p_mutation = 0.3
 k = 2
 k_minus_1 = k - 1
@@ -266,6 +266,8 @@ def calc_crowding_distance(population):
 
 def main():
     for run in range(10):
+        time_start = time.time()
+
         output_file = f"./result/nsga_{dataset}_{run}.csv"
 
         archive_f = []
@@ -312,13 +314,13 @@ def main():
             for item in archive_f:
                 file.write(f"{item[0]} {item[1]}\n")
 
+        with open("./result/nsga_time.csv", "a") as file:
+            file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+
 
 if __name__ == "__main__":
     # graphviz = GraphvizOutput()
     # graphviz.output_file = "NSGA_PROFILE.png"
 
     # with PyCallGraph(output=graphviz):
-    time_start = time.time()
     main()
-    with open("./result/nsga_time.csv", "a") as file:
-        file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
