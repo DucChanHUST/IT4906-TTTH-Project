@@ -1,18 +1,18 @@
 import math
 import time
 import random
-from networkx import neighbors
 import numpy as np
 
-dataset = "100_1"
+dataset = "200_1"
 input_file = f"./dataset/{dataset}.txt"
+print(dataset)
 
 x_corr = np.loadtxt(input_file, dtype=int)
 num_sensor = len(x_corr)
 
 inf = 99999
 pop_size = 32
-max_gen = 10000
+max_gen = 1000
 p_mutation = 0.3
 neighbor_size = 6
 k = 2
@@ -22,6 +22,7 @@ gamma = 0.5
 barrier_length = 1000
 
 lamb = []
+z = [None, None]
 z_nad = [None, None]
 
 
@@ -36,28 +37,6 @@ def init_lambda(pop_size):
 init_lambda(pop_size)
 
 
-# def search_neighbor():
-#     neighbors = []
-#     distance = []
-
-#     for i in range(pop_size):
-#         for j in range(i, pop_size):
-#             if i == j:
-#                 continue
-#             lamb1 = lamb[i]
-#             lamb2 = lamb[j]
-#             dis = 0
-#             for d in range(2):
-#                 dis += (lamb1[d] - lamb2[d]) ** 2
-#             dis = dis**0.5
-#             distance[i][j] = dis
-#             distance[j][i] = dis
-#         temp_list = np.array(distance[i])
-#         index = np.argsort(temp_list).tolist()
-#         neighbors.append(index[:neighbor_size])
-
-
-#     return neighbors
 def search_neighbor():
     lamb_array = np.array(lamb)
     distances = np.sqrt(
@@ -218,7 +197,7 @@ def evaluate(gene):
     total_active_sensor = sum(1 for g in gene if g > 0)
     total_energy_consumption = sum(calc_energy_consumption(r) for r in all_r_u if r > 0)
 
-    return total_active_sensor, total_energy_consumption
+    return total_active_sensor, total_energy_consumption, all_r_u
 
 
 def calc_fitness(f1, f2, z, z_nad, lamb_i):
@@ -244,16 +223,14 @@ def init_population(pop_size):
         individual.gene = [random.randint(0, 1) for _ in range(num_sensor)]
         while sum(individual.gene) == 0:
             individual.gene = [random.randint(0, 1) for _ in range(num_sensor)]
-        individual.f1, individual.f2 = evaluate(individual.gene)
+        individual.f1, individual.f2 = evaluate(individual.gene)[:2]
         population.append(individual)
     return population
 
 
 def main():
-    for run in range(10):
+    for run in range(0, 10, 1):
         time_start = time.time()
-
-        output_file = f"./result/moead_{dataset}_{run}.csv"
 
         archive_f = []
         neighbors = search_neighbor()
@@ -279,8 +256,8 @@ def main():
                 child1, child2 = Individual(), Individual()
                 child1.gene, child2.gene = crossover(ind.gene, neighbor_gene)
 
-                child1.f1, child1.f2 = evaluate(child1.gene)
-                child2.f1, child2.f2 = evaluate(child2.gene)
+                child1.f1, child1.f2 = evaluate(child1.gene)[:2]
+                child2.f1, child2.f2 = evaluate(child2.gene)[:2]
 
                 child1_fit = calc_fitness(child1.f1, child1.f2, z, z_nad, lamb_i)
                 child2_fit = calc_fitness(child2.f1, child2.f2, z, z_nad, lamb_i)
@@ -289,21 +266,42 @@ def main():
 
                 if min_fit == child1_fit:
                     population[i] = child1
+                    z[0] = min(z[0], child1.f1)
+                    z[1] = min(z[1], child1.f2)
                 elif min_fit == child2_fit:
                     population[i] = child2
+                    z[0] = min(z[0], child2.f1)
+                    z[1] = min(z[1], child2.f2)
+
+            z_nad[0] = max(ind.f1 for ind in population)
+            z_nad[1] = max(ind.f2 for ind in population)
 
             archive_f.extend([[ind.f1, ind.f2] for ind in population])
-            # for ind in population:
-            # print("r= ", ind.r)
-        with open(output_file, "w") as file:
+
+            # with open(f"./result/r/moead/{dataset}/{run}.csv", "a") as file:
+            #     file.write(f"gen {generation}\n")
+
+        with open(f"./result/r/moead/{dataset}/{run}.txt", "w") as file:
+            pass
+
+        for ind in population:
+            r = radius_formalize(ind.gene)
+            with open(f"./result/r/moead/{dataset}/{run}.txt", "a") as file:
+                file.write(f"{r}\n")
+
+        with open(f"./result/f/moead/{dataset}/{run}.csv", "w") as file:
             file.write(
                 f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
             )
             for item in archive_f:
                 file.write(f"{item[0]} {item[1]}\n")
 
-        with open("./result/moead_time.csv", "a") as file:
-            file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+        # with open("./result/moead_time.csv", "a") as file:
+        #     file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+
+        with open(f"./result/pareto/moead/{dataset}/{run}.csv", "w") as file:
+            for ind in population:
+                file.write(f"{ind.f1}, {ind.f2}\n")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import numpy as np
 # from pycallgraph2 import PyCallGraph
 # from pycallgraph2.output import GraphvizOutput
 
-dataset = "100_1"
+dataset = "250_1"
 input_file = f"./dataset/{dataset}.txt"
 
 x_corr = np.loadtxt(input_file, dtype=int)
@@ -268,8 +268,6 @@ def main():
     for run in range(10):
         time_start = time.time()
 
-        output_file = f"./result/nsga_{dataset}_{run}.csv"
-
         archive_f = []
         population = init_population(pop_size)
 
@@ -307,15 +305,21 @@ def main():
             # for ind in population:
             # print("r= ", ind.r)
 
-        with open(output_file, "w") as file:
-            file.write(
-                f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
-            )
-            for item in archive_f:
-                file.write(f"{item[0]} {item[1]}\n")
+        # with open(f"./result/f/nsga/{dataset}/{run}.csv", "w") as file:
+        #     file.write(
+        #         f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
+        #     )
+        #     for item in archive_f:
+        #         file.write(f"{item[0]} {item[1]}\n")
 
-        with open("./result/nsga_time.csv", "a") as file:
-            file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+        # with open("./result/nsga_time.csv", "a") as file:
+        #     file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+
+        with open(
+            f"./result/pareto/nsga/{dataset}/{run}.csv", "w"
+        ) as file:
+            for ind in population:
+                file.write(f"{ind.f1}, {ind.f2}\n")
 
 
 if __name__ == "__main__":
