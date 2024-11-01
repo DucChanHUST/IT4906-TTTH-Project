@@ -1,13 +1,14 @@
-from turtle import color
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
-fileData = "./dataset/100_1.txt"
+fileData = "./dataset/50_1.txt"
 x_corr = np.loadtxt(fileData, dtype=int)
 N = len(x_corr)
+
 k = 2
+alpha = 0.7
 n_layers = 100
-alpha = 0.8
+primary_color = "forestgreen"
 
 radii = np.array([])
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -22,12 +23,16 @@ for i in range(N):
 
         for j in range(n_layers):
             circle = plt.Circle(
-                (x_corr[i], 0), radius[j], color="blue", fill=False, alpha=alphas[j]
+                (x_corr[i], 0),
+                radius[j],
+                color=primary_color,
+                fill=False,
+                alpha=alphas[j],
             )
             ax.add_artist(circle)
 
         inner_circle = plt.Circle(
-            (x_corr[i], 0), R_s - r_u, color="blue", alpha=alpha, ec="black"
+            (x_corr[i], 0), R_s - r_u, color=primary_color, alpha=alpha, ec="black"
         )
         ax.add_artist(inner_circle)
 
@@ -50,4 +55,5 @@ ax.set_xlim(0, 1000)
 ax.set_ylim(-R_s - 1, R_s + 1)
 ax.set_aspect("equal")
 plt.axis("off")
+plt.tight_layout()
 plt.show()
