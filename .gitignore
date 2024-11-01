@@ -1,4 +1,5 @@
 result.txt
 test.py
 *.csv
+*.txt
 .vscode
