@@ -3,7 +3,7 @@ import time
 import random
 import numpy as np
 
-dataset = "200_1"
+dataset = "100_1"
 input_file = f"./dataset/{dataset}.txt"
 print(dataset)
 
@@ -20,6 +20,9 @@ k_minus_1 = k - 1
 beta = 1
 gamma = 0.5
 barrier_length = 1000
+
+run_start = 0
+run_end = 1
 
 lamb = []
 z = [None, None]
@@ -229,7 +232,7 @@ def init_population(pop_size):
 
 
 def main():
-    for run in range(0, 10, 1):
+    for run in range(run_start, run_end, 1):
         time_start = time.time()
 
         archive_f = []

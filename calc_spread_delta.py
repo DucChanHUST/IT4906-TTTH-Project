@@ -1,30 +1,44 @@
 import numpy as np
+import pandas as pd
 
-def calculate_spread(points):
-    # Sắp xếp các điểm theo mục tiêu f1
-    points = points[np.argsort(points[:, 0])]
+dataset = "100_1"
+run_start = 0
+run_end = 10
+output_file = f"./result/spread/moead/{dataset}.txt"
 
-    # Tính khoảng cách giữa các điểm liên tiếp
-    distances = np.linalg.norm(np.diff(points, axis=0), axis=1)
-    mean_distance = np.mean(distances)
 
-    # Tính D_min và D_max
-    D_min = np.linalg.norm(points[0] - np.array([np.min(points[:, 0]), np.min(points[:, 1])]))
-    D_max = np.linalg.norm(points[-1] - np.array([np.min(points[:, 0]), np.min(points[:, 1])]))
+def euclidean_distance(point1, point2):
+    return np.sqrt(np.sum((point1 - point2) ** 2))
 
-    # Tính Spread (Δ)
-    delta = (D_min + D_max + np.sum(np.abs(distances - mean_distance))) / (D_min + D_max + (len(distances) * mean_distance))
 
-    return delta
+def spread_metric(pareto_front):
+    pareto_front = sorted(pareto_front, key=lambda x: x[0])
+    pareto_front = np.array(pareto_front)
 
-# Ví dụ sử dụng
-final_generation = np.array([
-    [1, 3],
-    [2, 2],
-    [3, 1],
-    [4, 5],
-    [5, 4]
-])  # Các điểm f1 và f2 trong thế hệ cuối cùng
+    distances = [
+        euclidean_distance(pareto_front[i], pareto_front[i + 1])
+        for i in range(len(pareto_front) - 1)
+    ]
 
-spread = calculate_spread(final_generation)
-print("Spread (Δ):", spread)
+    d_f = euclidean_distance(pareto_front[0], pareto_front[-1])
+    d_l = euclidean_distance(pareto_front[-1], pareto_front[0])
+
+    d_avg = np.mean(distances)
+
+    spread = (d_f + d_l + sum(abs(d - d_avg) for d in distances)) / (
+        d_f + d_l + (len(pareto_front) - 1) * d_avg
+    )
+    return spread
+
+
+spead_values = []
+for run in range(run_start, run_end):
+    input_file = f"./result/pareto/moead/{dataset}/{run}.csv"
+    pareto_front = np.loadtxt(input_file, dtype=float, delimiter=",")
+    spread_value = spread_metric(pareto_front)
+    spead_values.append(spread_value)
+    print(f"Run {run} Spread (Δ) metric:", spread_value)
+
+with open(output_file, "w") as f:
+    for spread_value in spead_values:
+        f.write(f"{spread_value}\n")
