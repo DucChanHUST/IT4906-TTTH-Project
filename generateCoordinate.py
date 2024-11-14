@@ -1,6 +1,5 @@
+from operator import index
 import random
-
-N = 200
 
 
 def is_all_zero(array):
@@ -20,14 +19,18 @@ def initCoordinate(N):
 
 
 def save_array_to_txt(array, filename):
-    with open(filename, 'w') as file:
+    with open(filename, "w") as file:
         for element in array:
-            file.write(str(element) + '\n')
+            file.write(str(element) + "\n")
 
 
 array = initCoordinate(N)
 
-filename = "./dataset/200_1.txt"
-save_array_to_txt(array, filename)
+N = 150
+start_index = 0
+end_index = 1
+for index in range(start_index, end_index):
+    filename = f"./dataset/{N}/{N}_{index}.txt"
+    save_array_to_txt(array, filename)
 
 print("Mảng đã được lưu vào tệp tin:", filename)
