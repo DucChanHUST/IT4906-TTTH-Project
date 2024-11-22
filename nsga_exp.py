@@ -1,13 +1,16 @@
+import sys
 import math
 import time
 import random
 import numpy as np
 
-# from pycallgraph2 import PyCallGraph
-# from pycallgraph2.output import GraphvizOutput
+if len(sys.argv) > 1:
+    dataset = sys.argv[1]
+else:
+    dataset = "100_1"
 
-dataset = "250_1"
 input_file = f"./dataset/{dataset}.txt"
+print("-nsga", dataset)
 
 x_corr = np.loadtxt(input_file, dtype=int)
 num_sensor = len(x_corr)
@@ -21,6 +24,9 @@ k_minus_1 = k - 1
 beta = 1
 gamma = 0.5
 barrier_length = 1000
+
+run_start = 0
+run_end = 10
 
 lamb = []
 z_nad = [None, None]
@@ -65,15 +71,12 @@ def radius_formalize_outermost_sensor(x1, isFirst=True):
     if not isFirst:
         x1 = barrier_length - x1
 
-    min_r_u1 = None
+    min_r_u1 = x1
     for r_u1_val in range(1, x1 + 1):
         term = x1 - k_minus_1 * r_u1_val
         if exp_approx_beta(term) >= gamma:
             min_r_u1 = r_u1_val
             break
-
-    if min_r_u1 is None:
-        return None
 
     return math.ceil(min_r_u1)
 
@@ -265,13 +268,16 @@ def calc_crowding_distance(population):
 
 
 def main():
-    for run in range(10):
+    for run in range(run_start, run_end, 1):
+        print("-nsga run", run)
         time_start = time.time()
 
         archive_f = []
         population = init_population(pop_size)
 
         for generation in range(max_gen):
+            if (generation + 1) % 100 == 0:
+                print("-nsga", generation)
             np.random.shuffle(population)
 
             for i in range(0, pop_size, 2):
@@ -302,29 +308,30 @@ def main():
             population = next_population
             archive_f.extend([[ind.f1, ind.f2] for ind in population])
 
-            # for ind in population:
-            # print("r= ", ind.r)
+        with open(f"./result/r/nsga/nsga_{dataset}_{run}.txt", "w") as file:
+            pass
 
-        # with open(f"./result/f/nsga/{dataset}/{run}.csv", "w") as file:
-        #     file.write(
-        #         f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
-        #     )
-        #     for item in archive_f:
-        #         file.write(f"{item[0]} {item[1]}\n")
+        for ind in population:
+            r = radius_formalize(ind.gene)
+            with open(f"./result/r/nsga/nsga_{dataset}_{run}.txt", "a") as file:
+                file.write(f"{r}\n")
 
-        # with open("./result/nsga_time.csv", "a") as file:
-        #     file.write(f"{pop_size}, {max_gen}, {time.time() - time_start}\n")
+        with open(f"./result/f/nsga/nsga_{dataset}_{run}.csv", "w") as file:
+            file.write(
+                f"{max([pair[0] for pair in archive_f])} {max(pair[1] for pair in archive_f)}\n"
+            )
+            for item in archive_f:
+                file.write(f"{item[0]} {item[1]}\n")
 
-        with open(
-            f"./result/pareto/nsga/{dataset}/{run}.csv", "w"
-        ) as file:
+        with open("./result/nsga_time.csv", "a") as file:
+            file.write(
+                f"{pop_size}, {max_gen}, {dataset}, {run}, {time.time() - time_start}\n"
+            )
+
+        with open(f"./result/pareto/nsga/nsga_{dataset}_{run}.csv", "w") as file:
             for ind in population:
                 file.write(f"{ind.f1}, {ind.f2}\n")
 
 
 if __name__ == "__main__":
-    # graphviz = GraphvizOutput()
-    # graphviz.output_file = "NSGA_PROFILE.png"
-
-    # with PyCallGraph(output=graphviz):
     main()
