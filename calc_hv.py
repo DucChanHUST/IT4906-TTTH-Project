@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 pop_size = 32
 max_generation = 10000
-dts = 100
+dts = 250
 datasets = [f"{dts}_{i}" for i in range(10)]
 num_runs = 10
 

@@ -2,7 +2,7 @@ import glob
 import numpy as np
 import pandas as pd
 
-dataset = "100_1"
+datasets = ["100", "150", "200", "250"]
 
 
 def is_pareto_efficient(costs):
@@ -21,23 +21,32 @@ def is_pareto_efficient(costs):
     return is_efficient_mask
 
 
-file_paths = glob.glob(f"./result/pareto/moead/{dataset}/*.csv")
-print("Found files:", file_paths)
-all_points = []
+for dataset in datasets:
+    for i in range(0, 10):
+        file_paths_moead = glob.glob(
+            f"./result/pareto/moead/{dataset}/moead_{dataset}_{i}*.csv"
+        )
+        file_paths_nsga = glob.glob(
+            f"./result/pareto/nsga/{dataset}/nsga_{dataset}_{i}*.csv"
+        )
+        file_paths = file_paths_moead + file_paths_nsga
+        print("Found files:", file_paths)
+        all_points = []
 
-for file_path in file_paths:
-    print("Processing:", file_path)
-    data = pd.read_csv(file_path, header=None, names=["f1", "f2"])
-    all_points.append(data)
+        for file_path in file_paths:
+            print("Processing:", file_path)
+            data = pd.read_csv(file_path, header=None, names=["f1", "f2"])
+            all_points.append(data)
 
-combined_data = pd.concat(all_points, ignore_index=True).drop_duplicates()
+        combined_data = pd.concat(all_points, ignore_index=True).drop_duplicates()
 
-points = combined_data[["f1", "f2"]].values
-pareto_mask = is_pareto_efficient(points)
-pareto_front = combined_data[pareto_mask]
-pareto_front_sorted = pareto_front.sort_values(by=["f1", "f2"], ascending=[False, True])
+        points = combined_data[["f1", "f2"]].values
+        pareto_mask = is_pareto_efficient(points)
+        pareto_front = combined_data[pareto_mask]
+        pareto_front_sorted = pareto_front.sort_values(
+            by=["f1", "f2"], ascending=[False, True]
+        )
 
-
-output_path = f"./result/pareto/moead/approx_{dataset}.csv"
-pareto_front_sorted.to_csv(output_path, index=False, header=False)
-print("Pareto front saved to:", output_path)
+        output_path = f"./result/pareto/approx/{dataset}_{i}.csv"
+        pareto_front_sorted.to_csv(output_path, index=False, header=False, sep=",")
+        print("Pareto front saved to:", output_path)

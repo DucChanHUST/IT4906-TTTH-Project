@@ -1,66 +1,85 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 run_start = 0
-run_end = 50
-base_link = "./result/pareto/moead/"
-datasets = ["100_1", "150_1", "200_1", "250_1"]
+run_end = 10
+num_subdatasets = 10
+base_link = "./result/pareto"
+datasets = ["100", "150", "200", "250"]
+
+results = []
 
 
-def euclidean_distance(a, b):
-    return np.sqrt(np.sum((a - b) ** 2))
-
-
-def calculate_igd(true_pareto, run_pareto):
+def calculate_igd(pareto_front, reference_front):
     distances = []
-
-    for true_point in true_pareto:
-        min_distance = np.min(
-            [euclidean_distance(true_point, run_point) for run_point in run_pareto]
-        )
-        distances.append(min_distance)
-
-    igd = np.mean(distances)
-
-    return igd
+    for point in pareto_front:
+        distances.append(np.min(np.linalg.norm(reference_front - point, axis=1)))
+    return np.mean(distances)
 
 
-igd_values_per_dataset = []
+def normalize(data, min_vals, max_vals):
+    return (data - min_vals) / (max_vals - min_vals)
+
+
+def load_data(file):
+    data = pd.read_csv(file, header=None, delimiter=",")
+    data.drop_duplicates(inplace=True)
+    return data.values
+
+
+moead_igd_mean = []
+nsga_igd_mean = []
 
 for dataset in datasets:
-    igd_values = []
-    true_pareto = np.loadtxt(
-        f"{base_link}approx_{dataset}.csv", dtype=float, delimiter=","
-    )
-    true_pareto = sorted(true_pareto, key=lambda x: x[0])
-    true_pareto = np.unique(np.array(true_pareto), axis=0)
+    moead_igd_values = []
+    nsga_igd_values = []
 
-    f1_max = true_pareto[-1][0]
-    f2_max = true_pareto[-1][1]
-    f1_min = true_pareto[0][0]
-    f2_min = true_pareto[0][1]
+    for i in range(num_subdatasets):
+        true_pareto_front = load_data(f"{base_link}/approx/{dataset}_{i}.csv")
+        min_vals = np.min(true_pareto_front, axis=0)
+        max_vals = np.max(true_pareto_front, axis=0)
+        norm_true_pareto_front = normalize(true_pareto_front, min_vals, max_vals)
 
-    for point in true_pareto:
-        point[0] = (point[0] - f1_min) / (f1_max - f1_min)
-        point[1] = (point[1] - f2_min) / (f2_max - f2_min)
+        for run in range(run_start, run_end):
+            moead_pareto_front = load_data(
+                f"{base_link}/moead/{dataset}/moead_{dataset}_{i}_{run}.csv"
+            )
+            nsga_pareto_front = load_data(
+                f"{base_link}/nsga/{dataset}/nsga_{dataset}_{i}_{run}.csv"
+            )
 
-    for run in range(run_start, run_end):
-        input_file = f"{base_link}{dataset}/{run}.csv"
-        run_pareto = np.loadtxt(input_file, dtype=float, delimiter=",")
+            norm_moead_pareto_front = normalize(moead_pareto_front, min_vals, max_vals)
+            norm_nsga_pareto_front = normalize(nsga_pareto_front, min_vals, max_vals)
 
-        for point in run_pareto:
-            point[0] = (point[0] - f1_min) / (f1_max - f1_min)
-            point[1] = (point[1] - f2_min) / (f2_max - f2_min)
+            moead_igd = calculate_igd(norm_moead_pareto_front, norm_true_pareto_front)
+            nsga_igd = calculate_igd(norm_nsga_pareto_front, norm_true_pareto_front)
 
-        igd_value = calculate_igd(true_pareto, run_pareto)
-        igd_values.append(igd_value)
+            moead_igd_values.append(moead_igd)
+            nsga_igd_values.append(nsga_igd)
 
-    igd_values_per_dataset.append(igd_values)
+    moead_igd_mean.append(np.mean(moead_igd_values))
+    nsga_igd_mean.append(np.mean(nsga_igd_values))
 
-plt.boxplot(
-    igd_values_per_dataset, labels=["100", "150", "200", "250"], patch_artist=True
+print("MOEAD IGD Mean:", moead_igd_mean)
+print("NSGA IGD Mean:", nsga_igd_mean)
+
+# Plot the results
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bar_width = 0.35
+index = np.arange(len(datasets))
+
+bar1 = ax.bar(index, moead_igd_mean, bar_width, label="MOEA/D", color="red")
+bar2 = ax.bar(
+    index + bar_width, nsga_igd_mean, bar_width, label="NSGA-II", color="blue"
 )
 
-plt.ylabel("IGD Value")
-plt.xlabel("Number of Sensors")
+ax.set_xlabel("Dataset", fontsize=14)
+ax.set_ylabel("Mean IGD", fontsize=14)
+ax.set_title("Comparison of IGD values for MOEA/D and NSGA-II", fontsize=16)
+ax.set_xticks(index + bar_width / 2)
+ax.set_xticklabels(datasets)
+ax.legend(fontsize=14)
+
 plt.show()
