@@ -1,20 +1,24 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-dataset = "100_1"
-run = 1
-filename = f"./result/f/moead/{dataset}/{run}.csv"
+dataset = "100"
+algo = "moead"
+# algo = "nsga"
+subset = 0
+run = 0
+filename = f"./result/f/{algo}/{dataset}/{algo}_{dataset}_{subset}_{run}.csv"
 df = pd.read_csv(filename, sep=" ", header=None, skiprows=1)
 df.columns = ["f1", "f2"]
+
 pop_size = 32
 
 # Số thế hệ cụ thể mà bạn muốn biểu diễn
-selected_generations = [1, 5, 10, 50, 100, 1000]
+selected_generations = [1, 10, 50, 100, 500, 1000, 10000]
 
-colors = ["y", "c", "m", "g", "b", "r", "k"]
-markers = ["<", "s", "^", "D", "v", "o", ">"]
+colors = ["y", "c", "m", "g", "b", "k", "r"]
+markers = ["<", "D", ">", "^", "s", "v", "o"]
 
-plt.figure(figsize=(12, 9))
+plt.figure(figsize=(10, 9))
 
 for i, gen in enumerate(selected_generations):
     if gen * pop_size <= len(df):
@@ -28,6 +32,7 @@ for i, gen in enumerate(selected_generations):
             s=70,
         )
         if gen == selected_generations[-1]:
+            gen_data = gen_data.sort_values(by="f1")
             plt.plot(
                 gen_data["f1"],
                 gen_data["f2"],
@@ -38,8 +43,8 @@ for i, gen in enumerate(selected_generations):
             )
 
 
-plt.xlabel("number of active sensor")
-plt.ylabel("total energy consumption")
+plt.xlabel("Number of active sensors", fontsize=14)
+plt.ylabel("Total energy consumption", fontsize=14)
 plt.legend(fontsize=19)
 plt.grid(True)
 plt.tight_layout()
